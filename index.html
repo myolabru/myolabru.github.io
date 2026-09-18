@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyoLab — Комплексная оценка функции мышц на основе ИИ</title>
+    <meta name="description" content="MyoLab — программная платформа на основе ИИ для комплексной оценки функции мышц лица, шеи и верхних конечностей в реальном времени.">
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='10' fill='%23e34168'/><path d='M10 26L14 14L18 22L20 16L22 22L26 14L30 26' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><circle cx='20' cy='12' r='2.5' fill='white' opacity='0.8'/></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Manrope', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+                    colors: {
+                        myo: { 50:'#fdf2f4',100:'#fce4e8',200:'#facdd5',300:'#f5a3b3',400:'#ee6d87',500:'#e34168',600:'#cf2252',700:'#ae1843',800:'#91173d',900:'#7c1839',950:'#45071a' }
+                    },
+                    animation: {
+                        'drift': 'drift 8s ease-in-out infinite',
+                        'drift-delay': 'drift 8s ease-in-out 4s infinite',
+                        'signal': 'signal 2s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        drift: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
+                        signal: { '0%, 100%': { opacity: '0.4', transform: 'scaleX(1)' }, '50%': { opacity: '1', transform: 'scaleX(1.05)' } }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Nav - solid background, no bleed-through */
+        .nav-solid { background: #0f0f1e; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .nav-solid.scrolled { background: rgba(15,15,30,0.98); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+
+        /* Muscle point animation */
+        .muscle-point { animation: muscleGlow 2.5s ease-in-out infinite; }
+        .muscle-point:nth-child(2n) { animation-delay: 0.5s; }
+        .muscle-point:nth-child(3n) { animation-delay: 1s; }
+        @keyframes muscleGlow { 0%, 100% { r: 4; opacity: 0.6; } 50% { r: 6; opacity: 1; } }
+
+        /* EMG line draw */
+        .emg-line { stroke-dasharray: 800; stroke-dashoffset: 800; animation: drawLine 3s ease-in-out forwards; }
+        @keyframes drawLine { to { stroke-dashoffset: 0; } }
+
+        /* Card hover glow */
+        .card-hover { transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.05); }
+        .card-hover:hover { border-color: rgba(227,65,104,0.25); box-shadow: 0 8px 40px rgba(227,65,104,0.08); transform: translateY(-2px); }
+
+        /* Fiber pattern */
+        .fiber-bg { background-image: repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(227,65,104,0.02) 2px, rgba(227,65,104,0.02) 4px); }
+
+        /* Mobile menu */
+        .mobile-menu { transform: translateX(100%); transition: transform 0.3s ease; }
+        .mobile-menu.open { transform: translateX(0); }
+
+        /* Smooth section spacing */
+        section { position: relative; }
+
+        /* Better text rendering */
+        body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f0f1e; }
+        ::-webkit-scrollbar-thumb { background: #e34168; border-radius: 3px; }
+
+        /* Subtle grain */
+        .grain { position: relative; }
+        .grain::after { content:''; position:absolute; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"); pointer-events:none; z-index:1; }
+    </style>
+</head>
+<body class="font-sans text-gray-200 antialiased bg-[#0f0f1e]">
+
+    <!-- ========== NAVIGATION ========== -->
+    <nav id="mainNav" class="nav-solid fixed w-full z-50 top-0">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <a href="#" class="flex items-center gap-2.5">
+                    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-9 h-9">
+                        <rect width="40" height="40" rx="10" fill="url(#lg1)"/>
+                        <path d="M10 26 L14 14 L18 22 L20 16 L22 22 L26 14 L30 26" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                        <circle cx="20" cy="12" r="2.5" fill="white" opacity="0.8"/>
+                        <defs><linearGradient id="lg1" x1="0" y1="0" x2="40" y2="40"><stop stop-color="#e34168"/><stop offset="1" stop-color="#ae1843"/></linearGradient></defs>
+                    </svg>
+                    <span class="font-extrabold text-xl text-white tracking-tight">Myo<span class="text-myo-400">Lab</span></span>
+                </a>
+                <div class="hidden md:flex items-center gap-7">
+                    <a href="#about" class="text-gray-400 hover:text-white text-sm font-medium transition">О платформе</a>
+                    <a href="#technology" class="text-gray-400 hover:text-white text-sm font-medium transition">Технология</a>
+                    <a href="#applications" class="text-gray-400 hover:text-white text-sm font-medium transition">Применение</a>
+                    <a href="#advantages" class="text-gray-400 hover:text-white text-sm font-medium transition">Преимущества</a>
+                    <a href="#pricing" class="text-gray-400 hover:text-white text-sm font-medium transition">Тарифы</a>
+                    <a href="#contact" class="bg-myo-600 hover:bg-myo-500 text-white px-5 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-myo-600/20">Связаться</a>
+                </div>
+                <button id="mobileMenuBtn" class="md:hidden text-gray-400 hover:text-white p-2"><i class="fa-solid fa-bars text-xl"></i></button>
+            </div>
+        </div>
+        <div id="mobileMenu" class="mobile-menu fixed top-0 right-0 h-full w-72 bg-[#141428] border-l border-white/5 z-50 p-6 md:hidden shadow-2xl">
+            <button id="mobileMenuClose" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-2xl"></i></button>
+            <div class="flex flex-col gap-6 mt-14">
+                <a href="#about" class="text-gray-300 hover:text-white font-medium transition mobile-link">О платформе</a>
+                <a href="#technology" class="text-gray-300 hover:text-white font-medium transition mobile-link">Технология</a>
+                <a href="#applications" class="text-gray-300 hover:text-white font-medium transition mobile-link">Применение</a>
+                <a href="#advantages" class="text-gray-300 hover:text-white font-medium transition mobile-link">Преимущества</a>
+                <a href="#pricing" class="text-gray-300 hover:text-white font-medium transition mobile-link">Тарифы</a>
+                <a href="#contact" class="bg-myo-600 text-white text-center px-5 py-3 rounded-lg font-semibold mt-2 mobile-link">Связаться</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ========== HERO ========== -->
+    <section id="about" class="pt-28 pb-24 lg:pt-36 lg:pb-32 relative overflow-hidden grain">
+        <div class="absolute top-20 -left-40 w-[500px] h-[500px] bg-myo-600/8 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-0 right-0 w-[400px] h-[400px] bg-myo-800/10 rounded-full blur-[100px]"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="flex flex-col lg:flex-row items-center gap-16 lg:gap-20">
+                <div class="lg:w-1/2 max-w-xl">
+                    <div class="inline-flex items-center gap-2 bg-myo-950/60 border border-myo-800/30 text-myo-300 px-4 py-1.5 rounded-full text-xs font-semibold mb-8 tracking-wide uppercase">
+                        <div class="w-1.5 h-1.5 rounded-full bg-myo-400 animate-pulse"></div>
+                        ИИ в клинической практике
+                    </div>
+                    <h1 class="text-4xl lg:text-5xl font-extrabold text-white leading-[1.12] mb-7 tracking-tight">
+                        Комплексная оценка <span class="text-transparent bg-clip-text bg-gradient-to-r from-myo-400 to-myo-600">функции мышц</span> лица, шеи и верхних конечностей на основе ИИ технологий
+                    </h1>
+                    <p class="text-gray-400 text-lg leading-relaxed mb-10">
+                        MyoLab — платформа на основе искусственного интеллекта для объективной оценки функционального состояния мышц лица, шеи и верхних конечностей в реальном времени. Без датчиков, электродов и специального оборудования — только камера ноутбука или планшета.
+                    </p>
+                    <p class="text-gray-500 text-[15px] leading-relaxed mb-10 border-l-2 border-myo-600/30 pl-5">
+                        Продукт создан на стыке экспертизы ведущих специалистов по анатомии человека и исследователей в области искусственного интеллекта. В основе платформы — 5 лет экспериментальных исследований и клинических испытаний. MyoLab предназначен для специалистов по нейромоторной реабилитации, врачей, работающих с мышечными нарушениями, а также образовательных учреждений, изучающих анатомию человека.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <a href="#technology" class="bg-gradient-to-r from-myo-600 to-myo-700 text-white text-center px-8 py-4 rounded-xl font-semibold hover:from-myo-500 hover:to-myo-600 transition shadow-xl shadow-myo-600/20 text-[15px]">Узнать подробнее</a>
+                        <a href="#contact" class="border border-white/10 text-white text-center px-8 py-4 rounded-xl font-semibold hover:bg-white/5 transition text-[15px]">Написать нам</a>
+                    </div>
+                </div>
+                <div class="lg:w-1/2 relative w-full max-w-lg mx-auto lg:max-w-none">
+                    <div class="relative">
+                        <svg viewBox="0 0 620 480" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full drop-shadow-2xl">
+                            <style>
+                                @keyframes activate1 { 0%,15%{fill:rgba(239,68,68,0.12);stroke:rgba(239,68,68,0.25)} 35%,65%{fill:rgba(34,197,94,0.18);stroke:rgba(34,197,94,0.35)} 85%,100%{fill:rgba(239,68,68,0.12);stroke:rgba(239,68,68,0.25)} }
+                                @keyframes activate2 { 0%,20%{fill:rgba(239,68,68,0.1);stroke:rgba(239,68,68,0.2)} 40%,60%{fill:rgba(234,179,8,0.15);stroke:rgba(234,179,8,0.3)} 80%,100%{fill:rgba(239,68,68,0.1);stroke:rgba(239,68,68,0.2)} }
+                                @keyframes activate3 { 0%,25%{fill:rgba(239,68,68,0.08);stroke:rgba(239,68,68,0.15)} 45%,55%{fill:rgba(34,197,94,0.12);stroke:rgba(34,197,94,0.25)} 75%,100%{fill:rgba(239,68,68,0.08);stroke:rgba(239,68,68,0.15)} }
+                                @keyframes valChange1 { 0%,15%{fill:rgba(239,68,68,0.6)} 35%,65%{fill:rgba(34,197,94,0.7)} 85%,100%{fill:rgba(239,68,68,0.6)} }
+                                @keyframes valChange2 { 0%,20%{fill:rgba(239,68,68,0.5)} 40%,60%{fill:rgba(234,179,8,0.7)} 80%,100%{fill:rgba(239,68,68,0.5)} }
+                                @keyframes valChange3 { 0%,25%{fill:rgba(239,68,68,0.4)} 45%,55%{fill:rgba(34,197,94,0.6)} 75%,100%{fill:rgba(239,68,68,0.4)} }
+                                @keyframes barGrow1 { 0%,15%{width:12px} 35%,65%{width:55px} 85%,100%{width:12px} }
+                                @keyframes barGrow2 { 0%,20%{width:10px} 40%,60%{width:38px} 80%,100%{width:10px} }
+                                @keyframes barGrow3 { 0%,25%{width:8px} 45%,55%{width:30px} 75%,100%{width:8px} }
+                                @keyframes smile { 0%,15%{d:path('M218 232 Q228 234 240 234 Q252 234 262 232')} 35%,65%{d:path('M215 228 Q225 242 240 244 Q255 242 265 228')} 85%,100%{d:path('M218 232 Q228 234 240 234 Q252 234 262 232')} }
+                                @keyframes mouthOpen { 0%,15%{d:path('M222 232 Q230 230 240 230 Q250 230 258 232')} 35%,65%{d:path('M220 232 Q228 238 240 239 Q252 238 260 232')} 85%,100%{d:path('M222 232 Q230 230 240 230 Q250 230 258 232')} }
+                                @keyframes eyeSquint { 0%,15%{ry:9} 35%,65%{ry:6} 85%,100%{ry:9} }
+                                @keyframes neckTense { 0%,20%{fill:rgba(239,68,68,0.06);stroke:rgba(239,68,68,0.12)} 40%,60%{fill:rgba(234,179,8,0.1);stroke:rgba(234,179,8,0.2)} 80%,100%{fill:rgba(239,68,68,0.06);stroke:rgba(239,68,68,0.12)} }
+                                @keyframes shoulderTense { 0%,30%{fill:rgba(239,68,68,0.05);stroke:rgba(239,68,68,0.1)} 50%{fill:rgba(34,197,94,0.08);stroke:rgba(34,197,94,0.15)} 70%,100%{fill:rgba(239,68,68,0.05);stroke:rgba(239,68,68,0.1)} }
+                                @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+                                .z-cheek { animation: activate1 6s ease-in-out infinite; }
+                                .z-eye { animation: activate2 6s ease-in-out infinite; }
+                                .z-mouth { animation: activate1 6s ease-in-out 0.3s infinite; }
+                                .z-forehead { animation: activate3 6s ease-in-out infinite; }
+                                .z-neck { animation: neckTense 6s ease-in-out infinite; }
+                                .z-shoulder { animation: shoulderTense 6s ease-in-out infinite; }
+                                .v-cheek { animation: valChange1 6s ease-in-out infinite; }
+                                .v-eye { animation: valChange2 6s ease-in-out infinite; }
+                                .v-mouth { animation: valChange1 6s ease-in-out 0.3s infinite; }
+                                .v-forehead { animation: valChange3 6s ease-in-out infinite; }
+                                .eye-anim { animation: eyeSquint 6s ease-in-out infinite; }
+                                .mouth-anim { animation: smile 6s ease-in-out infinite; }
+                                .mouth2-anim { animation: mouthOpen 6s ease-in-out infinite; }
+                            </style>
+                            <!-- Background -->
+                            <rect x="10" y="10" width="600" height="460" rx="24" fill="#141428" stroke="rgba(227,65,104,0.1)" stroke-width="1"/>
+
+                            <!-- Camera icon -->
+                            <rect x="255" y="25" width="110" height="26" rx="13" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+                            <circle cx="290" cy="38" r="5" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1"/><circle cx="290" cy="38" r="2" fill="rgba(255,255,255,0.3)"/>
+                            <text x="303" y="42" fill="rgba(255,255,255,0.4)" font-size="9" font-family="JetBrains Mono">КАМЕРА</text>
+
+                            <!-- Recording indicator -->
+                            <circle cx="32" cy="32" r="4" fill="#e34168" style="animation:pulse 2s infinite"><animate attributeName="opacity" values="0.4;1;0.4" dur="2s" repeatCount="indefinite"/></circle>
+                            <text x="42" y="36" fill="rgba(255,255,255,0.4)" font-size="8" font-family="JetBrains Mono">В РЕАЛЬНОМ ВРЕМЕНИ</text>
+
+                            <!-- ====== LEFT PANEL: Muscle Names ====== -->
+                            <rect x="20" y="70" width="110" height="340" rx="12" fill="rgba(255,255,255,0.015)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+                            <text x="35" y="90" fill="rgba(255,255,255,0.45)" font-size="8" font-family="JetBrains Mono" font-weight="600">МЫШЦЫ</text>
+
+                            <!-- Frontalis -->
+                            <circle cx="35" cy="110" r="3" fill="rgba(255,255,255,0.1)"/><circle class="v-forehead" cx="35" cy="110" r="2" />
+                            <text x="44" y="114" fill="rgba(255,255,255,0.35)" font-size="6.5" font-family="JetBrains Mono">Лобная</text>
+                            <text x="44" y="123" fill="rgba(255,255,255,0.2)" font-size="5.5" font-family="JetBrains Mono" font-style="italic">Frontalis</text>
+                            <line x1="120" y1="110" x2="263" y2="105" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="2 2"/>
+
+                            <!-- Orbicularis oculi -->
+                            <circle cx="35" cy="148" r="3" fill="rgba(255,255,255,0.1)"/><circle class="v-eye" cx="35" cy="148" r="2" />
+                            <text x="44" y="149" fill="rgba(255,255,255,0.35)" font-size="6.5" font-family="JetBrains Mono">Круговая</text>
+                            <text x="44" y="158" fill="rgba(255,255,255,0.35)" font-size="6.5" font-family="JetBrains Mono">мышца глаза</text>
+                            <text x="44" y="167" fill="rgba(255,255,255,0.2)" font-size="5.5" font-family="JetBrains Mono" font-style="italic">Orb. oculi</text>
+                            <line x1="120" y1="152" x2="255" y2="148" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="2 2"/>
+
+                            <!-- Zygomaticus -->
+                            <circle cx="35" cy="195" r="3" fill="rgba(255,255,255,0.1)"/><circle class="v-cheek" cx="35" cy="195" r="2" />
+                            <text x="44" y="196" fill="rgba(255,255,255,0.35)" font-size="6.5" font-family="JetBrains Mono">Скуловая</text>
+                            <text x="44" y="205" fill="rgba(255,255,255,0.2)" font-size="5.5" font-family="JetBrains Mono" font-style="italic">Zygomaticus</text>
+                            <line x1="120" y1="197" x2="237" y2="190" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="2 2"/>
+
+                            <!-- Orbicularis oris -->
+                            <circle cx="35" cy="233" r="3" fill="rgba(255,255,255,0.1)"/><circle class="v-mouth" cx="35" cy="233" r="2" />
+                            <text x="44" y="234" fill="rgba(255,255,255,0.35)" font-size="6.5" font-family="JetBrains Mono">Круговая</text>
+                            <text x="44" y="243" fill="rgba(255,255,255,0.35)" font-size="6.5" font-family="JetBrains Mono">мышца рта</text>
+                            <text x="44" y="252" fill="rgba(255,255,255,0.2)" font-size="5.5" font-family="JetBrains Mono" font-style="italic">Orb. oris</text>
+                            <line x1="120" y1="237" x2="280" y2="234" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="2 2"/>
+
+                            <!-- Masseter -->
+                            <circle cx="35" cy="278" r="3" fill="rgba(255,255,255,0.1)"/><circle class="v-forehead" cx="35" cy="278" r="2" />
+                            <text x="44" y="279" fill="rgba(255,255,255,0.35)" font-size="6.5" font-family="JetBrains Mono">Жевательная</text>
+                            <text x="44" y="288" fill="rgba(255,255,255,0.2)" font-size="5.5" font-family="JetBrains Mono" font-style="italic">Masseter</text>
+                            <line x1="120" y1="280" x2="237" y2="250" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="2 2"/>
+
+                            <!-- SCM -->
+                            <circle cx="35" cy="315" r="3" fill="rgba(255,255,255,0.1)"/><circle cx="35" cy="315" r="2" fill="rgba(234,179,8,0.3)"/>
+                            <text x="44" y="314" fill="rgba(255,255,255,0.35)" font-size="6.5" font-family="JetBrains Mono">ГКСМ</text>
+                            <text x="44" y="323" fill="rgba(255,255,255,0.2)" font-size="5.5" font-family="JetBrains Mono" font-style="italic">SCM</text>
+                            <line x1="120" y1="317" x2="280" y2="320" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="2 2"/>
+
+                            <!-- Trapezius + Deltoid -->
+                            <circle cx="35" cy="352" r="3" fill="rgba(255,255,255,0.1)"/><circle cx="35" cy="352" r="2" fill="rgba(239,68,68,0.3)"/>
+                            <text x="44" y="351" fill="rgba(255,255,255,0.35)" font-size="6.5" font-family="JetBrains Mono">Трапециевидная</text>
+                            <text x="44" y="360" fill="rgba(255,255,255,0.35)" font-size="6.5" font-family="JetBrains Mono">/ Дельтовидная</text>
+                            <text x="44" y="369" fill="rgba(255,255,255,0.2)" font-size="5.5" font-family="JetBrains Mono" font-style="italic">Trap. / Deltoid</text>
+                            <line x1="120" y1="355" x2="261" y2="370" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="2 2"/>
+
+                            <!-- HEAD outline -->
+                            <ellipse cx="310" cy="170" rx="78" ry="95" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+                            <!-- Jaw -->
+                            <path d="M232 170 Q232 250 270 278 Q290 293 310 296 Q330 293 350 278 Q388 250 388 170" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.7"/>
+
+                            <!-- Ears -->
+                            <path d="M232 150 Q220 155 218 170 Q217 185 225 192" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.7"/>
+                            <path d="M388 150 Q400 155 402 170 Q403 185 395 192" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.7"/>
+
+                            <!-- Eyebrows -->
+                            <path d="M257 138 Q265 133 280 133 Q290 134 297 137" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.2" stroke-linecap="round"/>
+                            <path d="M323 137 Q330 134 340 133 Q355 133 363 138" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.2" stroke-linecap="round"/>
+
+                            <!-- EYES -->
+                            <path d="M260 155 Q270 145 280 145 Q290 145 300 155" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="0.8"/>
+                            <ellipse class="eye-anim" cx="280" cy="155" rx="20" ry="9" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.6"/>
+                            <circle cx="280" cy="155" r="5" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+                            <circle cx="280" cy="155" r="2.5" fill="rgba(255,255,255,0.2)"/>
+                            <path d="M320 155 Q330 145 340 145 Q350 145 360 155" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="0.8"/>
+                            <ellipse class="eye-anim" cx="340" cy="155" rx="20" ry="9" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.6"/>
+                            <circle cx="340" cy="155" r="5" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+                            <circle cx="340" cy="155" r="2.5" fill="rgba(255,255,255,0.2)"/>
+                            <!-- NOSE -->
+                            <path d="M310 168 L305 200 Q308 205 310 206 Q312 205 315 200 L310 168" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="0.6"/>
+                            <!-- MOUTH animated -->
+                            <path class="mouth-anim" d="M283 232 Q293 234 310 234 Q323 234 333 232" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="0.9"/>
+                            <path class="mouth2-anim" d="M287 232 Q295 230 310 230 Q321 230 329 232" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+
+                            <!-- ====== ANATOMICAL MUSCLE ZONES ====== -->
+                            <!-- Frontalis (forehead - wide flat muscle) -->
+                            <path class="z-forehead" d="M263 95 Q275 88 310 86 Q345 88 357 95 L360 115 Q345 120 310 122 Q275 120 260 115 Z" stroke-width="0.7"/>
+                            <text class="v-forehead" x="297" y="108" font-size="7.5" font-family="JetBrains Mono">0.21</text>
+
+                            <!-- Orbicularis oculi LEFT (almond ring around eye) -->
+                            <path class="z-eye" d="M255 148 Q260 135 280 132 Q300 135 303 148 Q300 162 280 166 Q260 162 255 148 Z" stroke-width="0.7"/>
+                            <path class="z-eye" d="M317 148 Q320 135 340 132 Q360 135 365 148 Q360 162 340 166 Q320 162 317 148 Z" stroke-width="0.7"/>
+                            <text class="v-eye" x="262" y="175" font-size="7.5" font-family="JetBrains Mono">0.18</text>
+                            <text class="v-eye" x="325" y="175" font-size="7.5" font-family="JetBrains Mono">0.15</text>
+
+                            <!-- Zygomaticus major LEFT (diagonal cheekbone to mouth corner) -->
+                            <path class="z-cheek" d="M237 178 Q243 172 255 175 L287 212 Q285 220 279 220 L245 195 Q235 185 237 178 Z" stroke-width="0.7"/>
+                            <path class="z-cheek" d="M383 178 Q377 172 365 175 L333 212 Q335 220 341 220 L375 195 Q385 185 383 178 Z" stroke-width="0.7"/>
+                            <text class="v-cheek" x="238" y="202" font-size="7.5" font-family="JetBrains Mono">0.12</text>
+                            <text class="v-cheek" x="360" y="202" font-size="7.5" font-family="JetBrains Mono">0.09</text>
+
+                            <!-- Orbicularis oris (lip ring around mouth) -->
+                            <path class="z-mouth" d="M280 224 Q285 216 310 214 Q335 216 340 224 L343 238 Q335 249 310 251 Q285 249 277 238 Z" stroke-width="0.7"/>
+                            <text class="v-mouth" x="297" y="260" font-size="7.5" font-family="JetBrains Mono">0.14</text>
+
+                            <!-- Masseter LEFT (thick block at jaw angle) -->
+                            <path class="z-forehead" d="M237 228 Q240 222 250 220 L257 222 Q261 240 259 262 L253 274 Q243 272 239 264 Q235 250 237 228 Z" stroke-width="0.6"/>
+                            <path class="z-forehead" d="M383 228 Q380 222 370 220 L363 222 Q359 240 361 262 L367 274 Q377 272 381 264 Q385 250 383 228 Z" stroke-width="0.6"/>
+
+                            <!-- Sternocleidomastoid LEFT (diagonal neck band from ear to clavicle) -->
+                            <path class="z-neck" d="M280 296 Q275 298 273 310 L260 355 Q257 362 261 365 L271 362 Q275 358 283 332 L293 300 Q290 296 280 296 Z" stroke-width="0.6"/>
+                            <path class="z-neck" d="M340 296 Q345 298 347 310 L360 355 Q363 362 359 365 L349 362 Q345 358 337 332 L327 300 Q330 296 340 296 Z" stroke-width="0.6"/>
+
+                            <!-- Trapezius LEFT (fan from neck down to shoulder) -->
+                            <path class="z-shoulder" d="M261 362 Q253 368 235 380 L185 410 Q177 416 181 422 L195 418 Q223 403 253 386 L270 375 Q271 368 265 364 Z" stroke-width="0.5"/>
+                            <path class="z-shoulder" d="M359 362 Q367 368 385 380 L435 410 Q443 416 439 422 L425 418 Q397 403 367 386 L350 375 Q349 368 355 364 Z" stroke-width="0.5"/>
+
+                            <!-- Deltoid LEFT (rounded shoulder cap) -->
+                            <path class="z-shoulder" d="M175 408 Q165 398 153 402 Q137 412 133 432 Q135 440 147 442 L187 424 Q185 416 175 408 Z" stroke-width="0.5"/>
+                            <path class="z-shoulder" d="M445 408 Q455 398 467 402 Q483 412 487 432 Q485 440 473 442 L433 424 Q435 416 445 408 Z" stroke-width="0.5"/>
+
+                            <!-- DATA PANEL -->
+                            <rect x="500" y="70" width="100" height="230" rx="12" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/>
+                            <text x="513" y="90" fill="rgba(255,255,255,0.45)" font-size="8" font-family="JetBrains Mono" font-weight="600">МЫШЦЫ</text>
+
+                            <!-- Bar: Cheeks -->
+                            <text x="513" y="112" fill="rgba(255,255,255,0.3)" font-size="7" font-family="JetBrains Mono">Щёки</text>
+                            <rect x="513" y="116" width="75" height="5" rx="2.5" fill="rgba(255,255,255,0.04)"/>
+                            <rect x="513" y="116" rx="2.5" height="5" fill="rgba(34,197,94,0.5)"><animate attributeName="width" values="12;55;12" dur="6s" repeatCount="indefinite"/></rect>
+
+                            <!-- Bar: Eyes -->
+                            <text x="513" y="138" fill="rgba(255,255,255,0.3)" font-size="7" font-family="JetBrains Mono">Глаза</text>
+                            <rect x="513" y="142" width="75" height="5" rx="2.5" fill="rgba(255,255,255,0.04)"/>
+                            <rect x="513" y="142" rx="2.5" height="5" fill="rgba(234,179,8,0.5)"><animate attributeName="width" values="10;38;10" dur="6s" repeatCount="indefinite"/></rect>
+
+                            <!-- Bar: Mouth -->
+                            <text x="513" y="164" fill="rgba(255,255,255,0.3)" font-size="7" font-family="JetBrains Mono">Рот</text>
+                            <rect x="513" y="168" width="75" height="5" rx="2.5" fill="rgba(255,255,255,0.04)"/>
+                            <rect x="513" y="168" rx="2.5" height="5" fill="rgba(34,197,94,0.4)"><animate attributeName="width" values="11;48;11" dur="6s" repeatCount="indefinite"/></rect>
+
+                            <!-- Bar: Forehead -->
+                            <text x="513" y="190" fill="rgba(255,255,255,0.3)" font-size="7" font-family="JetBrains Mono">Лоб</text>
+                            <rect x="513" y="194" width="75" height="5" rx="2.5" fill="rgba(255,255,255,0.04)"/>
+                            <rect x="513" y="194" rx="2.5" height="5" fill="rgba(34,197,94,0.3)"><animate attributeName="width" values="8;28;8" dur="6s" repeatCount="indefinite"/></rect>
+
+                            <!-- Bar: Neck -->
+                            <text x="513" y="216" fill="rgba(255,255,255,0.3)" font-size="7" font-family="JetBrains Mono">Шея</text>
+                            <rect x="513" y="220" width="75" height="5" rx="2.5" fill="rgba(255,255,255,0.04)"/>
+                            <rect x="513" y="220" rx="2.5" height="5" fill="rgba(234,179,8,0.4)"><animate attributeName="width" values="6;25;6" dur="6s" repeatCount="indefinite"/></rect>
+
+                            <!-- Bar: Shoulders -->
+                            <text x="513" y="242" fill="rgba(255,255,255,0.3)" font-size="7" font-family="JetBrains Mono">Плечи</text>
+                            <rect x="513" y="246" width="75" height="5" rx="2.5" fill="rgba(255,255,255,0.04)"/>
+                            <rect x="513" y="246" rx="2.5" height="5" fill="rgba(34,197,94,0.25)"><animate attributeName="width" values="5;18;5" dur="6s" repeatCount="indefinite"/></rect>
+
+                            <!-- Status text -->
+                            <rect x="508" y="262" width="85" height="24" rx="6" fill="rgba(34,197,94,0.08)" stroke="rgba(34,197,94,0.15)" stroke-width="0.5">
+                                <animate attributeName="fill" values="rgba(239,68,68,0.08);rgba(34,197,94,0.08);rgba(239,68,68,0.08)" dur="6s" repeatCount="indefinite"/>
+                            </rect>
+                            <text x="520" y="278" font-size="7.5" font-family="JetBrains Mono" font-weight="600">
+                                <animate attributeName="fill" values="rgba(239,68,68,0.6);rgba(34,197,94,0.7);rgba(239,68,68,0.6)" dur="6s" repeatCount="indefinite"/>
+                                АКТИВАЦИЯ
+                            </text>
+
+                            <!-- COLOR SCALE -->
+                            <rect x="140" y="430" width="220" height="28" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+                            <text x="152" y="441" fill="rgba(255,255,255,0.25)" font-size="6.5" font-family="JetBrains Mono">ШКАЛА:</text>
+                            <circle cx="192" cy="444" r="4" fill="rgba(239,68,68,0.5)"/><text x="200" y="448" fill="rgba(255,255,255,0.3)" font-size="7" font-family="JetBrains Mono">Покой</text>
+                            <circle cx="248" cy="444" r="4" fill="rgba(234,179,8,0.5)"/><text x="256" y="448" fill="rgba(255,255,255,0.3)" font-size="7" font-family="JetBrains Mono">Средняя</text>
+                            <circle cx="312" cy="444" r="4" fill="rgba(34,197,94,0.5)"/><text x="320" y="448" fill="rgba(255,255,255,0.3)" font-size="7" font-family="JetBrains Mono">Высокая</text>
+
+                            <!-- Asymmetry -->
+                            <rect x="380" y="430" width="110" height="28" rx="8" fill="rgba(234,179,8,0.06)" stroke="rgba(234,179,8,0.12)" stroke-width="0.5"/>
+                            <text x="395" y="448" fill="rgba(234,179,8,0.5)" font-size="7.5" font-family="JetBrains Mono">АСИММЕТРИЯ 8%</text>
+                        </svg>
+                    </div>
+                    <div class="absolute -left-4 bottom-24 bg-[#141428] p-3.5 rounded-xl border border-white/5 shadow-2xl flex items-center gap-3 z-20 animate-drift-delay hidden sm:flex">
+                        <div class="w-10 h-10 bg-myo-600/15 rounded-lg flex items-center justify-center"><i class="fa-solid fa-video text-myo-400 text-lg"></i></div>
+                        <div><p class="text-[10px] text-myo-400 font-mono uppercase tracking-wider">Только камера</p><p class="text-sm font-bold text-white">Без датчиков</p></div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-24 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto">
+                <div class="text-center"><div class="text-3xl font-extrabold text-white mb-1.5">3</div><div class="text-xs text-gray-500 uppercase tracking-wider font-medium">Зоны оценки</div></div>
+                <div class="text-center"><div class="text-3xl font-extrabold text-white mb-1.5">&lt;200</div><div class="text-xs text-gray-500 uppercase tracking-wider font-medium">мс задержка</div></div>
+                <div class="text-center"><div class="text-3xl font-extrabold text-white mb-1.5">0</div><div class="text-xs text-gray-500 uppercase tracking-wider font-medium">Датчиков</div></div>
+                <div class="text-center"><div class="text-3xl font-extrabold text-white mb-1.5">PDF</div><div class="text-xs text-gray-500 uppercase tracking-wider font-medium">Авто-отчёты</div></div>
+            </div>
+            <p class="text-center text-gray-600 text-sm mt-10 max-w-2xl mx-auto">Результат 5 лет экспериментальных исследований и клинических испытаний. Создан на стыке анатомии человека и искусственного интеллекта.</p>
+        </div>
+    </section>
+
+    <!-- ========== TECHNOLOGY ========== -->
+    <section id="technology" class="py-28 bg-[#111125] relative fiber-bg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-2xl mb-16">
+                <span class="text-myo-500 font-mono text-xs uppercase tracking-widest">Как это работает</span>
+                <h2 class="text-3xl lg:text-4xl font-extrabold text-white mt-4 mb-5 tracking-tight">От видеопотока к функциональной оценке мышц</h2>
+                <p class="text-gray-400 leading-relaxed text-[15px]">MyoLab анализирует движения и активацию мышц лица, шеи и верхних конечностей с помощью моделей глубокого обучения. Вся обработка выполняется локально на устройстве, видеозаписи не сохраняются и не передаются.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="card-hover bg-[#141428] rounded-2xl p-8 group">
+                    <div class="flex items-center gap-3 mb-7"><div class="w-10 h-10 rounded-lg bg-myo-600/12 flex items-center justify-center text-myo-400 font-mono font-bold text-sm">01</div><div class="h-px flex-1 bg-gradient-to-r from-myo-800/30 to-transparent"></div></div>
+                    <div class="w-14 h-14 bg-myo-600/8 rounded-xl flex items-center justify-center mb-5 group-hover:bg-myo-600/15 transition"><i class="fa-solid fa-camera text-myo-400 text-2xl"></i></div>
+                    <h3 class="text-lg font-bold text-white mb-3">Обычная камера</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Никакого специализированного оборудования. Для оценки функции мышц лица, шеи и верхних конечностей достаточно встроенной камеры ноутбука или планшета.</p>
+                </div>
+                <div class="card-hover bg-[#141428] rounded-2xl p-8 group">
+                    <div class="flex items-center gap-3 mb-7"><div class="w-10 h-10 rounded-lg bg-myo-600/12 flex items-center justify-center text-myo-400 font-mono font-bold text-sm">02</div><div class="h-px flex-1 bg-gradient-to-r from-myo-800/30 to-transparent"></div></div>
+                    <div class="w-14 h-14 bg-myo-600/8 rounded-xl flex items-center justify-center mb-5 group-hover:bg-myo-600/15 transition"><i class="fa-solid fa-brain text-myo-400 text-2xl"></i></div>
+                    <h3 class="text-lg font-bold text-white mb-3">ИИ-анализ в реальном времени</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Алгоритмы 3D-реконструкции, пространственно-временного моделирования и мультимодальной фузии видео- и аудиосигналов оценивают функциональное состояние мышечных групп с клинической точностью.</p>
+                </div>
+                <div class="card-hover bg-[#141428] rounded-2xl p-8 group">
+                    <div class="flex items-center gap-3 mb-7"><div class="w-10 h-10 rounded-lg bg-myo-600/12 flex items-center justify-center text-myo-400 font-mono font-bold text-sm">03</div><div class="h-px flex-1 bg-gradient-to-r from-myo-800/30 to-transparent"></div></div>
+                    <div class="w-14 h-14 bg-myo-600/8 rounded-xl flex items-center justify-center mb-5 group-hover:bg-myo-600/15 transition"><i class="fa-solid fa-chart-column text-myo-400 text-2xl"></i></div>
+                    <h3 class="text-lg font-bold text-white mb-3">Функциональные показатели</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Карты мышечной активации по трём зонам, выявление асимметрий и компенсаторных паттернов. Структурированные PDF-отчёты для включения в медицинскую документацию и отслеживания динамики.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== APPLICATIONS ========== -->
+    <section id="applications" class="py-28 bg-[#0f0f1e] relative overflow-hidden">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-myo-600/4 rounded-full blur-[120px]"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-myo-500 font-mono text-xs uppercase tracking-widest">Области применения</span>
+                <h2 class="text-3xl lg:text-4xl font-extrabold text-white mt-4 mb-5 tracking-tight">Для кого создан MyoLab</h2>
+                <p class="text-gray-400 leading-relaxed text-[15px]">Реабилитологи, неврологи, логопеды, специалисты по мышечным нарушениям, медицинские вузы и исследовательские центры.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-5xl mx-auto">
+                <div class="card-hover bg-[#141428] rounded-2xl p-7"><div class="flex items-start gap-4"><div class="w-11 h-11 bg-myo-600/10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"><i class="fa-solid fa-brain text-myo-400"></i></div><div><h3 class="text-white font-bold mb-2">Нейромоторная реабилитация</h3><p class="text-gray-500 text-sm leading-relaxed">Оценка функции мышц у пациентов после инсульта, черепно-мозговых травм, при нейродегенеративных заболеваниях (Паркинсон, БАС, рассеянный склероз). Количественный контроль восстановления от сеанса к сеансу.</p></div></div></div>
+                <div class="card-hover bg-[#141428] rounded-2xl p-7"><div class="flex items-start gap-4"><div class="w-11 h-11 bg-myo-600/10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"><i class="fa-solid fa-comment-medical text-myo-400"></i></div><div><h3 class="text-white font-bold mb-2">Логопедия и миофункциональная терапия</h3><p class="text-gray-500 text-sm leading-relaxed">Коррекция артикуляционных нарушений, работа с орофациальной и шейной мускулатурой у детей и взрослых. Визуальная обратная связь для пациента и терапевта.</p></div></div></div>
+                <div class="card-hover bg-[#141428] rounded-2xl p-7"><div class="flex items-start gap-4"><div class="w-11 h-11 bg-myo-600/10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"><i class="fa-solid fa-face-meh text-myo-400"></i></div><div><h3 class="text-white font-bold mb-2">Парезы и параличи лицевого нерва</h3><p class="text-gray-500 text-sm leading-relaxed">Количественная оценка степени нарушения функции мимической мускулатуры и шеи, мониторинг восстановления симметрии.</p></div></div></div>
+                <div class="card-hover bg-[#141428] rounded-2xl p-7"><div class="flex items-start gap-4"><div class="w-11 h-11 bg-myo-600/10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"><i class="fa-solid fa-hand text-myo-400"></i></div><div><h3 class="text-white font-bold mb-2">Реабилитация верхних конечностей</h3><p class="text-gray-500 text-sm leading-relaxed">Оценка функции мышц плечевого пояса, рук и кистей. Отслеживание компенсаторных движений и динамики восстановления моторного контроля.</p></div></div></div>
+                <div class="card-hover bg-[#141428] rounded-2xl p-7"><div class="flex items-start gap-4"><div class="w-11 h-11 bg-myo-600/10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"><i class="fa-solid fa-flask text-myo-400"></i></div><div><h3 class="text-white font-bold mb-2">Клинические исследования</h3><p class="text-gray-500 text-sm leading-relaxed">Стандартизированный инструмент для количественной оценки функции мышц в исследовательских протоколах. Воспроизводимые данные для публикаций и мультицентровых исследований.</p></div></div></div>
+                <div class="card-hover bg-[#141428] rounded-2xl p-7"><div class="flex items-start gap-4"><div class="w-11 h-11 bg-myo-600/10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"><i class="fa-solid fa-graduation-cap text-myo-400"></i></div><div><h3 class="text-white font-bold mb-2">Образование и обучение</h3><p class="text-gray-500 text-sm leading-relaxed">Наглядный инструмент для медицинских вузов и курсов повышения квалификации. Студенты и практикующие врачи видят работу мышц в реальном времени, что углубляет понимание анатомии и биомеханики.</p></div></div></div>
+                <div class="card-hover bg-[#141428] rounded-2xl p-7"><div class="flex items-start gap-4"><div class="w-11 h-11 bg-myo-600/10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"><i class="fa-solid fa-laptop-medical text-myo-400"></i></div><div><h3 class="text-white font-bold mb-2">Телереабилитация</h3><p class="text-gray-500 text-sm leading-relaxed">Дистанционная оценка функции мышц в домашних условиях. Пациент выполняет упражнения перед камерой, специалист получает объективные данные без очного визита.</p></div></div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== ADVANTAGES ========== -->
+    <section id="advantages" class="py-28 bg-[#111125] relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col lg:flex-row gap-16 items-start">
+                <div class="lg:w-2/5 lg:sticky lg:top-24">
+                    <span class="text-myo-500 font-mono text-xs uppercase tracking-widest">Преимущества</span>
+                    <h2 class="text-3xl lg:text-4xl font-extrabold text-white mt-4 mb-5 tracking-tight">Почему MyoLab</h2>
+                    <p class="text-gray-400 leading-relaxed mb-8 text-[15px]">Платформа создана совместно с клиницистами и рассчитана на реальные условия работы, от университетской клиники до частного кабинета.</p>
+                    <svg viewBox="0 0 300 60" class="w-full opacity-20" fill="none"><path d="M0 30 L30 30 L40 10 L50 50 L60 20 L70 40 L80 30 L120 30 L130 8 L140 52 L150 25 L160 38 L170 30 L220 30 L230 15 L240 45 L250 22 L260 35 L270 30 L300 30" stroke="#e34168" stroke-width="1.5" class="animate-signal"/></svg>
+                </div>
+                <div class="lg:w-3/5 grid gap-4">
+                    <div class="card-hover bg-[#141428] rounded-xl p-6 flex gap-5"><div class="w-11 h-11 bg-myo-600/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"><i class="fa-solid fa-eye-slash text-myo-400"></i></div><div><h4 class="text-white font-bold mb-1.5">Без маркеров, электродов и датчиков</h4><p class="text-gray-500 text-sm leading-relaxed">Полностью неинвазивная оценка на основе компьютерного зрения. Для работы требуется только стандартная RGB-камера.</p></div></div>
+                    <div class="card-hover bg-[#141428] rounded-xl p-6 flex gap-5"><div class="w-11 h-11 bg-myo-600/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"><i class="fa-solid fa-bolt text-myo-400"></i></div><div><h4 class="text-white font-bold mb-1.5">Оценка в реальном времени</h4><p class="text-gray-500 text-sm leading-relaxed">Задержка менее 200 мс. Специалист и пациент видят карту функционального состояния мышц непосредственно во время упражнений.</p></div></div>
+                    <div class="card-hover bg-[#141428] rounded-xl p-6 flex gap-5"><div class="w-11 h-11 bg-myo-600/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"><i class="fa-solid fa-ruler-combined text-myo-400"></i></div><div><h4 class="text-white font-bold mb-1.5">Комплексная оценка трёх зон</h4><p class="text-gray-500 text-sm leading-relaxed">Единая платформа для оценки функции мышц лица, шеи и верхних конечностей. Воспроизводимые количественные показатели вместо субъективного осмотра.</p></div></div>
+                    <div class="card-hover bg-[#141428] rounded-xl p-6 flex gap-5"><div class="w-11 h-11 bg-myo-600/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"><i class="fa-solid fa-file-medical text-myo-400"></i></div><div><h4 class="text-white font-bold mb-1.5">Автоматическая документация</h4><p class="text-gray-500 text-sm leading-relaxed">Генерация структурированных PDF-отчётов с функциональными показателями по каждой зоне. Экономия времени на медицинскую документацию.</p></div></div>
+                    <div class="card-hover bg-[#141428] rounded-xl p-6 flex gap-5"><div class="w-11 h-11 bg-myo-600/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"><i class="fa-solid fa-shield-halved text-myo-400"></i></div><div><h4 class="text-white font-bold mb-1.5">Защита персональных данных</h4><p class="text-gray-500 text-sm leading-relaxed">Вся обработка выполняется локально на устройстве. Видеопоток не сохраняется, анализируются только псевдонимизированные координаты ключевых точек.</p></div></div>
+                    <div class="card-hover bg-[#141428] rounded-xl p-6 flex gap-5"><div class="w-11 h-11 bg-myo-600/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"><i class="fa-solid fa-ruble-sign text-myo-400"></i></div><div><h4 class="text-white font-bold mb-1.5">Доступность</h4><p class="text-gray-500 text-sm leading-relaxed">В отличие от ЭМГ-оборудования стоимостью от 1,5 млн руб., MyoLab работает на обычном ноутбуке или планшете. Доступен в любом кабинете.</p></div></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== PRICING ========== -->
+    <section id="pricing" class="py-28 bg-[#0f0f1e] relative overflow-hidden">
+        <div class="absolute top-1/2 left-0 w-80 h-80 bg-myo-600/4 rounded-full blur-[100px] -translate-y-1/2"></div>
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-myo-500 font-mono text-xs uppercase tracking-widest">Тарифы</span>
+                <h2 class="text-3xl lg:text-4xl font-extrabold text-white mt-4 mb-5 tracking-tight">Простая и прозрачная подписка</h2>
+                <p class="text-gray-400 leading-relaxed text-[15px]">Выберите удобный вариант оплаты. Годовая подписка выгоднее на 17%. Все функции платформы доступны в каждом тарифе.</p>
+            </div>
+            <div class="flex items-center justify-center gap-4 mb-14">
+                <span id="labelMonthly" class="text-white font-semibold text-sm">Ежемесячно</span>
+                <button id="billingToggle" class="relative w-14 h-7 bg-[#141428] border border-white/10 rounded-full cursor-pointer transition" onclick="toggleBilling()"><div id="toggleDot" class="absolute top-0.5 left-0.5 w-6 h-6 bg-myo-500 rounded-full transition-all duration-300"></div></button>
+                <span id="labelYearly" class="text-gray-500 font-semibold text-sm">Ежегодно <span class="text-myo-400 text-xs ml-1">-17%</span></span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+                <div class="card-hover bg-[#141428] rounded-2xl p-8 flex flex-col">
+                    <div class="mb-6"><h3 class="text-white font-bold text-xl mb-2">Стандарт</h3><p class="text-gray-500 text-sm">Полный доступ ко всем функциям MyoLab для одного специалиста.</p></div>
+                    <div class="mb-7"><span id="priceAmount" class="text-4xl font-extrabold text-white">100 &#8381;</span><span id="pricePeriod" class="text-gray-500 text-sm ml-1">/ мес</span><p id="priceSub" class="text-gray-600 text-xs mt-1.5"></p></div>
+                    <ul class="space-y-3 mb-8 flex-1">
+                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Оценка мышц лица, шеи и верхних конечностей</li>
+                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Анализ в реальном времени</li>
+                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Автоматические PDF-отчёты</li>
+                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>История сеансов и сравнение динамики</li>
+                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Техническая поддержка по email</li>
+                    </ul>
+                    <button onclick="handlePayment()" class="w-full bg-gradient-to-r from-myo-600 to-myo-700 text-white py-3.5 rounded-xl font-semibold hover:from-myo-500 hover:to-myo-600 transition shadow-xl shadow-myo-600/15">Оформить подписку</button>
+                </div>
+                <div class="bg-gradient-to-br from-[#141428] to-[#1a1535] rounded-2xl p-8 border border-myo-800/25 flex flex-col relative">
+                    <div class="absolute -top-3 right-6 bg-myo-600 text-white text-xs font-bold px-3 py-1 rounded-full">Для клиник</div>
+                    <div class="mb-6"><h3 class="text-white font-bold text-xl mb-2">Клиника</h3><p class="text-gray-500 text-sm">Для медицинских учреждений с несколькими специалистами.</p></div>
+                    <div class="mb-7"><span class="text-4xl font-extrabold text-white">По запросу</span></div>
+                    <ul class="space-y-3 mb-8 flex-1">
+                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Всё из тарифа «Стандарт»</li>
+                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Несколько рабочих мест</li>
+                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Приоритетная поддержка</li>
+                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Интеграция с ИС клиники</li>
+                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Обучение персонала</li>
+                    </ul>
+                    <a href="mailto:zastrizhkova@mail.ru?subject=Тариф Клиника" class="w-full block text-center border border-myo-600/40 text-myo-400 py-3.5 rounded-xl font-semibold hover:bg-myo-600/10 transition">Связаться с нами</a>
+                </div>
+            </div>
+            <p class="text-center text-gray-600 text-xs mt-8">Оплата через защищённые платёжные системы ЮKassa и Stripe. Подписку можно отменить в любой момент.</p>
+        </div>
+    </section>
+
+    <!-- ========== КАК ПОЛУЧИТЬ ДОСТУП ========== -->
+    <section class="py-20 bg-[#111125] border-t border-white/5">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-14">
+                <span class="text-myo-500 font-mono text-xs uppercase tracking-widest">Порядок подключения</span>
+                <h2 class="text-2xl lg:text-3xl font-extrabold text-white mt-4 tracking-tight">Как получить доступ после оплаты</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="card-hover bg-[#141428] rounded-xl p-6 text-center"><div class="w-12 h-12 bg-myo-600/12 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-myo-400 font-mono font-bold text-lg">1</span></div><h3 class="text-white font-bold mb-2">Оплатите подписку</h3><p class="text-gray-500 text-sm">Выберите тариф и оплатите банковской картой через защищённый платёжный сервис.</p></div>
+                <div class="card-hover bg-[#141428] rounded-xl p-6 text-center"><div class="w-12 h-12 bg-myo-600/12 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-myo-400 font-mono font-bold text-lg">2</span></div><h3 class="text-white font-bold mb-2">Получите доступ</h3><p class="text-gray-500 text-sm">В течение 24 часов на вашу почту придёт письмо с логином и ссылкой для входа.</p></div>
+                <div class="card-hover bg-[#141428] rounded-xl p-6 text-center"><div class="w-12 h-12 bg-myo-600/12 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-myo-400 font-mono font-bold text-lg">3</span></div><h3 class="text-white font-bold mb-2">Начните работу</h3><p class="text-gray-500 text-sm">Откройте платформу в браузере, подключите веб-камеру и начните оценку.</p></div>
+            </div>
+            <div class="bg-[#141428] rounded-xl p-6 border border-white/5 mt-8">
+                <h3 class="text-white font-bold mb-4">Что входит в подписку:</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="flex items-start gap-2 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Оценка мышц лица, шеи и верхних конечностей в реальном времени</div>
+                    <div class="flex items-start gap-2 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Автоматические PDF-отчёты после каждого сеанса</div>
+                    <div class="flex items-start gap-2 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>История всех сеансов и сравнение динамики</div>
+                    <div class="flex items-start gap-2 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Техническая поддержка по электронной почте</div>
+                    <div class="flex items-start gap-2 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Обновления платформы без дополнительной платы</div>
+                    <div class="flex items-start gap-2 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Возможность отмены подписки в любой момент</div>
+                </div>
+            </div>
+            <p class="text-gray-600 text-xs mt-6 text-center">Для работы необходимы: компьютер или планшет с веб-камерой, интернет-соединение и браузер (Chrome, Firefox, Safari, Edge). Возврат средств возможен в течение 14 дней.</p>
+        </div>
+    </section>
+
+    <!-- ========== CONTACT ========== -->
+    <section id="contact" class="py-28 bg-[#0f0f1e] relative overflow-hidden">
+        <div class="absolute bottom-0 right-0 w-96 h-96 bg-myo-600/4 rounded-full blur-[100px]"></div>
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+            <span class="text-myo-500 font-mono text-xs uppercase tracking-widest">Контакты</span>
+            <h2 class="text-3xl lg:text-4xl font-extrabold text-white mt-4 mb-5 tracking-tight">Хотите узнать больше?</h2>
+            <p class="text-gray-400 leading-relaxed mb-12 max-w-xl mx-auto text-[15px]">Мы открыты для сотрудничества с клиниками, реабилитационными центрами и исследовательскими группами. Напишите нам, обсудим, как MyoLab может помочь в оценке функции мышц ваших пациентов.</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <a href="mailto:zastrizhkova@mail.ru" class="inline-flex items-center gap-3 bg-gradient-to-r from-myo-600 to-myo-700 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-myo-500 hover:to-myo-600 transition shadow-xl shadow-myo-600/15"><i class="fa-solid fa-envelope"></i>zastrizhkova@mail.ru</a>
+                <a href="tel:+79163563311" class="inline-flex items-center gap-3 border border-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/5 transition"><i class="fa-solid fa-phone"></i>+7 (916) 356-33-11</a>
+            </div>
+            <p class="text-gray-600 text-sm mt-8">Мы ответим в течение 48 часов</p>
+        </div>
+    </section>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="bg-[#0a0a16] border-t border-white/5 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
+                <div>
+                    <div class="flex items-center gap-2.5 mb-4">
+                        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7"><rect width="40" height="40" rx="10" fill="url(#lgF)"/><path d="M10 26 L14 14 L18 22 L20 16 L22 22 L26 14 L30 26" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="20" cy="12" r="2.5" fill="white" opacity="0.8"/><defs><linearGradient id="lgF" x1="0" y1="0" x2="40" y2="40"><stop stop-color="#e34168"/><stop offset="1" stop-color="#ae1843"/></linearGradient></defs></svg>
+                        <span class="font-bold text-lg text-white tracking-tight">Myo<span class="text-myo-400">Lab</span></span>
+                    </div>
+                    <p class="text-gray-500 text-sm leading-relaxed">Программная платформа на основе ИИ для комплексной оценки функции мышц лица, шеи и верхних конечностей.</p>
+                </div>
+                <div>
+                    <h4 class="text-white font-bold text-sm mb-4">Документы</h4>
+                    <ul class="space-y-2.5"><li><a href="oferta.html" class="text-gray-500 text-sm hover:text-myo-400 transition">Публичная оферта</a></li><li><a href="oferta.html" class="text-gray-500 text-sm hover:text-myo-400 transition">Политика конфиденциальности</a></li><li><a href="oferta.html" class="text-gray-500 text-sm hover:text-myo-400 transition">Условия возврата</a></li></ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-bold text-sm mb-4">Контакты</h4>
+                    <ul class="space-y-2.5 text-gray-500 text-sm">
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-phone text-myo-400 text-xs"></i><a href="tel:+79163563311" class="hover:text-myo-400 transition">+7 (916) 356-33-11</a></li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-envelope text-myo-400 text-xs"></i><a href="mailto:zastrizhkova@mail.ru" class="hover:text-myo-400 transition">zastrizhkova@mail.ru</a></li>
+                    </ul>
+                    <h4 class="text-white font-bold text-sm mt-6 mb-3">Реквизиты</h4>
+                    <ul class="space-y-1 text-gray-600 text-xs"><li>ООО «Агентство инновационных систем»</li><li>ИНН: 0275069328</li><li>ОГРН: 1090280036000</li></ul>
+                </div>
+            </div>
+            <div class="border-t border-white/5 pt-6 flex flex-col md:flex-row justify-between items-center gap-3">
+                <p class="text-gray-600 text-xs">&copy; 2026 MyoLab. Все права защищены.</p>
+                <div class="flex items-center gap-4 text-gray-600 text-xs"><a href="oferta.html" class="hover:text-gray-400 transition">Оферта</a><span class="text-gray-700">|</span><span>Оплата через ЮKassa</span></div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    // Billing toggle
+    var isYearly = false;
+    function toggleBilling() {
+        isYearly = !isYearly;
+        var dot = document.getElementById('toggleDot'), amount = document.getElementById('priceAmount'), period = document.getElementById('pricePeriod'), sub = document.getElementById('priceSub'), lM = document.getElementById('labelMonthly'), lY = document.getElementById('labelYearly');
+        if (isYearly) { dot.style.left='calc(100% - 1.625rem)'; amount.innerHTML='1 000 &#8381;'; period.textContent='/ год'; sub.textContent='≈ 83 ₽/мес'; lM.className='text-gray-500 font-semibold text-sm'; lY.className='text-white font-semibold text-sm'; }
+        else { dot.style.left='0.125rem'; amount.innerHTML='100 &#8381;'; period.textContent='/ мес'; sub.textContent=''; lM.className='text-white font-semibold text-sm'; lY.className='text-gray-500 font-semibold text-sm'; }
+    }
+    // Payment
+    async function handlePayment() {
+        try { var r = await fetch('/api/create-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:isYearly?'yearly':'monthly'})}); var d = await r.json(); if(d.url){window.location.href=d.url;}else{alert('Ошибка. Попробуйте позже или напишите на zastrizhkova@mail.ru');} } catch(e) { alert('Сервис оплаты временно недоступен. Напишите на zastrizhkova@mail.ru'); }
+    }
+    // Mobile menu
+    var mb=document.getElementById('mobileMenuBtn'),mc=document.getElementById('mobileMenuClose'),mm=document.getElementById('mobileMenu');
+    mb.addEventListener('click',function(){mm.classList.add('open');}); mc.addEventListener('click',function(){mm.classList.remove('open');});
+    document.querySelectorAll('.mobile-link').forEach(function(l){l.addEventListener('click',function(){mm.classList.remove('open');});});
+    document.addEventListener('click',function(e){if(mm.classList.contains('open')&&!mm.contains(e.target)&&!mb.contains(e.target))mm.classList.remove('open');});
+    // Smooth scroll
+    document.querySelectorAll('a[href^="#"]').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();var t=document.querySelector(this.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'});});});
+    // Nav scroll effect
+    window.addEventListener('scroll',function(){document.getElementById('mainNav').classList.toggle('scrolled',window.scrollY>20);});
+    </script>
+</body>
+</html>
