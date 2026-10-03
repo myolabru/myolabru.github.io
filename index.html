@@ -94,6 +94,7 @@
                     <a href="#applications" class="text-gray-400 hover:text-white text-sm font-medium transition">Применение</a>
                     <a href="#advantages" class="text-gray-400 hover:text-white text-sm font-medium transition">Преимущества</a>
                     <a href="#pricing" class="text-gray-400 hover:text-white text-sm font-medium transition">Тарифы</a>
+                    <a href="https://demo.myolab.ru" class="inline-flex items-center gap-1.5 text-myo-300 hover:text-white text-sm font-semibold transition"><i class="fa-solid fa-play text-[10px]"></i>Демо</a>
                     <a href="#contact" class="bg-myo-600 hover:bg-myo-500 text-white px-5 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-myo-600/20">Связаться</a>
                 </div>
                 <button id="mobileMenuBtn" class="md:hidden text-gray-400 hover:text-white p-2"><i class="fa-solid fa-bars text-xl"></i></button>
@@ -107,6 +108,7 @@
                 <a href="#applications" class="text-gray-300 hover:text-white font-medium transition mobile-link">Применение</a>
                 <a href="#advantages" class="text-gray-300 hover:text-white font-medium transition mobile-link">Преимущества</a>
                 <a href="#pricing" class="text-gray-300 hover:text-white font-medium transition mobile-link">Тарифы</a>
+                <a href="https://demo.myolab.ru" class="text-myo-300 hover:text-white font-semibold transition"><i class="fa-solid fa-play text-xs mr-2"></i>Демо-версия</a>
                 <a href="#contact" class="bg-myo-600 text-white text-center px-5 py-3 rounded-lg font-semibold mt-2 mobile-link">Связаться</a>
             </div>
         </div>
@@ -133,8 +135,8 @@
                         Продукт создан на стыке экспертизы ведущих специалистов по анатомии человека и исследователей в области искусственного интеллекта. В основе платформы — 5 лет экспериментальных исследований и клинических испытаний. MyoLab предназначен для специалистов по нейромоторной реабилитации, врачей, работающих с мышечными нарушениями, а также образовательных учреждений, изучающих анатомию человека.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-4">
-                        <a href="#technology" class="bg-gradient-to-r from-myo-600 to-myo-700 text-white text-center px-8 py-4 rounded-xl font-semibold hover:from-myo-500 hover:to-myo-600 transition shadow-xl shadow-myo-600/20 text-[15px]">Узнать подробнее</a>
-                        <a href="#contact" class="border border-white/10 text-white text-center px-8 py-4 rounded-xl font-semibold hover:bg-white/5 transition text-[15px]">Написать нам</a>
+                        <a href="https://demo.myolab.ru" class="inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-myo-600 to-myo-700 text-white text-center px-8 py-4 rounded-xl font-semibold hover:from-myo-500 hover:to-myo-600 transition shadow-xl shadow-myo-600/20 text-[15px]"><i class="fa-solid fa-play text-xs"></i>Попробовать демо</a>
+                        <a href="#technology" class="border border-white/10 text-white text-center px-8 py-4 rounded-xl font-semibold hover:bg-white/5 transition text-[15px]">Узнать подробнее</a>
                     </div>
                 </div>
                 <div class="lg:w-1/2 relative w-full max-w-lg mx-auto lg:max-w-none">
@@ -554,36 +556,48 @@
     <!-- ========== PRICING ========== -->
     <section id="pricing" class="py-28 bg-[#0f0f1e] relative overflow-hidden">
         <div class="absolute top-1/2 left-0 w-80 h-80 bg-myo-600/4 rounded-full blur-[100px] -translate-y-1/2"></div>
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="text-center max-w-2xl mx-auto mb-16">
                 <span class="text-myo-500 font-mono text-xs uppercase tracking-widest">Тарифы</span>
                 <h2 class="text-3xl lg:text-4xl font-extrabold text-white mt-4 mb-5 tracking-tight">Простая и прозрачная подписка</h2>
-                <p class="text-gray-400 leading-relaxed text-[15px]">Выберите удобный вариант оплаты. Годовая подписка выгоднее на 17%. Все функции платформы доступны в каждом тарифе.</p>
+                <p class="text-gray-400 leading-relaxed text-[15px]">Ежемесячная подписка без скрытых платежей. Выберите тариф по зонам анализа и отмените подписку в любой момент.</p>
             </div>
-            <div class="flex items-center justify-center gap-4 mb-14">
-                <span id="labelMonthly" class="text-white font-semibold text-sm">Ежемесячно</span>
-                <button id="billingToggle" class="relative w-14 h-7 bg-[#141428] border border-white/10 rounded-full cursor-pointer transition" onclick="toggleBilling()"><div id="toggleDot" class="absolute top-0.5 left-0.5 w-6 h-6 bg-myo-500 rounded-full transition-all duration-300"></div></button>
-                <span id="labelYearly" class="text-gray-500 font-semibold text-sm">Ежегодно <span class="text-myo-400 text-xs ml-1">-17%</span></span>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-                <div class="card-hover bg-[#141428] rounded-2xl p-8 flex flex-col">
-                    <div class="mb-6"><h3 class="text-white font-bold text-xl mb-2">Стандарт</h3><p class="text-gray-500 text-sm">Полный доступ ко всем функциям MyoLab для одного специалиста.</p></div>
-                    <div class="mb-7"><span id="priceAmount" class="text-4xl font-extrabold text-white">100 &#8381;</span><span id="pricePeriod" class="text-gray-500 text-sm ml-1">/ мес</span><p id="priceSub" class="text-gray-600 text-xs mt-1.5"></p></div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Лицо: доступен -->
+                <div class="card-hover bg-[#141428] rounded-2xl p-8 flex flex-col relative">
+                    <div class="absolute -top-3 right-6 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full">Доступен</div>
+                    <div class="mb-6 md:min-h-[7rem]"><h3 class="text-white font-bold text-xl mb-2">Лицо</h3><p class="text-gray-500 text-sm">Анализ мимических мышц лица для одного специалиста.</p></div>
+                    <div class="mb-7"><span class="text-4xl font-extrabold text-white">100 &#8381;</span><span class="text-gray-500 text-sm ml-1">/ мес</span></div>
                     <ul class="space-y-3 mb-8 flex-1">
-                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Оценка мышц лица, шеи и верхних конечностей</li>
-                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Анализ в реальном времени</li>
+                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Оценка мимических мышц лица в реальном времени</li>
+                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Калибровка под лицо пациента и оценка асимметрии</li>
                         <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Автоматические PDF-отчёты</li>
                         <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>История сеансов и сравнение динамики</li>
                         <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Техническая поддержка по email</li>
                     </ul>
-                    <button onclick="handlePayment()" class="w-full bg-gradient-to-r from-myo-600 to-myo-700 text-white py-3.5 rounded-xl font-semibold hover:from-myo-500 hover:to-myo-600 transition shadow-xl shadow-myo-600/15">Оформить подписку</button>
+                    <button onclick="handlePayment('face')" class="w-full bg-gradient-to-r from-myo-600 to-myo-700 text-white py-3.5 rounded-xl font-semibold hover:from-myo-500 hover:to-myo-600 transition shadow-xl shadow-myo-600/15">Оформить подписку</button>
                 </div>
+                <!-- Лицо, шея и верхние конечности: скоро -->
                 <div class="bg-gradient-to-br from-[#141428] to-[#1a1535] rounded-2xl p-8 border border-myo-800/25 flex flex-col relative">
+                    <div class="absolute -top-3 right-6 bg-amber-500 text-[#0f0f1e] text-xs font-bold px-3 py-1 rounded-full">Скоро</div>
+                    <div class="mb-6 md:min-h-[7rem]"><h3 class="text-white font-bold text-xl mb-2">Лицо, шея и верхние конечности</h3><p class="text-gray-500 text-sm">Комплексный анализ мышц лица, шеи, плечевого пояса и рук.</p></div>
+                    <div class="mb-7"><span class="text-4xl font-extrabold text-white">1 000 &#8381;</span><span class="text-gray-500 text-sm ml-1">/ мес</span></div>
+                    <ul class="space-y-3 mb-8 flex-1">
+                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Всё из тарифа «Лицо»</li>
+                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Оценка мышц шеи</li>
+                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Оценка мышц плечевого пояса и рук</li>
+                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Выявление компенсаторных движений</li>
+                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Отчёты по всем зонам анализа</li>
+                    </ul>
+                    <a href="mailto:zastrizhkova@mail.ru?subject=MyoLab: заявка на тариф «Лицо, шея и верхние конечности»" class="w-full block text-center border border-myo-600/40 text-myo-400 py-3.5 rounded-xl font-semibold hover:bg-myo-600/10 transition">Оставить заявку</a>
+                    <p class="text-gray-600 text-xs mt-3 text-center">Сообщим, когда тариф станет доступен</p>
+                </div>
+                <!-- Клиника -->
+                <div class="card-hover bg-[#141428] rounded-2xl p-8 flex flex-col relative">
                     <div class="absolute -top-3 right-6 bg-myo-600 text-white text-xs font-bold px-3 py-1 rounded-full">Для клиник</div>
-                    <div class="mb-6"><h3 class="text-white font-bold text-xl mb-2">Клиника</h3><p class="text-gray-500 text-sm">Для медицинских учреждений с несколькими специалистами.</p></div>
+                    <div class="mb-6 md:min-h-[7rem]"><h3 class="text-white font-bold text-xl mb-2">Клиника</h3><p class="text-gray-500 text-sm">Для медицинских учреждений с несколькими специалистами.</p></div>
                     <div class="mb-7"><span class="text-4xl font-extrabold text-white">По запросу</span></div>
                     <ul class="space-y-3 mb-8 flex-1">
-                        <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Всё из тарифа «Стандарт»</li>
                         <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Несколько рабочих мест</li>
                         <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Приоритетная поддержка</li>
                         <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Интеграция с ИС клиники</li>
@@ -592,7 +606,7 @@
                     <a href="mailto:zastrizhkova@mail.ru?subject=Тариф Клиника" class="w-full block text-center border border-myo-600/40 text-myo-400 py-3.5 rounded-xl font-semibold hover:bg-myo-600/10 transition">Связаться с нами</a>
                 </div>
             </div>
-            <p class="text-center text-gray-600 text-xs mt-8">Оплата через защищённые платёжные системы ЮKassa и Stripe. Подписку можно отменить в любой момент.</p>
+            <p class="text-center text-gray-600 text-xs mt-8">Оплата через защищённый платёжный сервис ЮKassa. Подписку можно отменить в любой момент. <a href="https://demo.myolab.ru" class="text-myo-400 hover:underline">Попробовать демо-версию</a></p>
         </div>
     </section>
 
@@ -611,7 +625,7 @@
             <div class="bg-[#141428] rounded-xl p-6 border border-white/5 mt-8">
                 <h3 class="text-white font-bold mb-4">Что входит в подписку:</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="flex items-start gap-2 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Оценка мышц лица, шеи и верхних конечностей в реальном времени</div>
+                    <div class="flex items-start gap-2 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Оценка мышц в реальном времени по зонам вашего тарифа</div>
                     <div class="flex items-start gap-2 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Автоматические PDF-отчёты после каждого сеанса</div>
                     <div class="flex items-start gap-2 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>История всех сеансов и сравнение динамики</div>
                     <div class="flex items-start gap-2 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Техническая поддержка по электронной почте</div>
@@ -671,17 +685,9 @@
     </footer>
 
     <script>
-    // Billing toggle
-    var isYearly = false;
-    function toggleBilling() {
-        isYearly = !isYearly;
-        var dot = document.getElementById('toggleDot'), amount = document.getElementById('priceAmount'), period = document.getElementById('pricePeriod'), sub = document.getElementById('priceSub'), lM = document.getElementById('labelMonthly'), lY = document.getElementById('labelYearly');
-        if (isYearly) { dot.style.left='calc(100% - 1.625rem)'; amount.innerHTML='1 000 &#8381;'; period.textContent='/ год'; sub.textContent='≈ 83 ₽/мес'; lM.className='text-gray-500 font-semibold text-sm'; lY.className='text-white font-semibold text-sm'; }
-        else { dot.style.left='0.125rem'; amount.innerHTML='100 &#8381;'; period.textContent='/ мес'; sub.textContent=''; lM.className='text-white font-semibold text-sm'; lY.className='text-gray-500 font-semibold text-sm'; }
-    }
-    // Payment
-    async function handlePayment() {
-        try { var r = await fetch('/api/create-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:isYearly?'yearly':'monthly'})}); var d = await r.json(); if(d.url){window.location.href=d.url;}else{alert('Ошибка. Попробуйте позже или напишите на zastrizhkova@mail.ru');} } catch(e) { alert('Сервис оплаты временно недоступен. Напишите на zastrizhkova@mail.ru'); }
+    // Payment (plan: 'face' = тариф «Лицо», 100 ₽/мес)
+    async function handlePayment(plan) {
+        try { var r = await fetch('/api/create-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:plan||'face'})}); var d = await r.json(); if(d.url){window.location.href=d.url;}else{alert('Ошибка. Попробуйте позже или напишите на zastrizhkova@mail.ru');} } catch(e) { alert('Сервис оплаты временно недоступен. Напишите на zastrizhkova@mail.ru'); }
     }
     // Mobile menu
     var mb=document.getElementById('mobileMenuBtn'),mc=document.getElementById('mobileMenuClose'),mm=document.getElementById('mobileMenu');
