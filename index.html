@@ -95,6 +95,7 @@
                     <a href="#advantages" class="text-gray-400 hover:text-white text-sm font-medium transition">Преимущества</a>
                     <a href="#pricing" class="text-gray-400 hover:text-white text-sm font-medium transition">Тарифы</a>
                     <a href="https://demo.myolab.ru" class="inline-flex items-center gap-1.5 text-myo-300 hover:text-white text-sm font-semibold transition"><i class="fa-solid fa-play text-[10px]"></i>Демо</a>
+                    <a href="https://app.myolab.ru/vhod" class="text-gray-400 hover:text-white text-sm font-medium transition">Войти</a>
                     <a href="#contact" class="bg-myo-600 hover:bg-myo-500 text-white px-5 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-myo-600/20">Связаться</a>
                 </div>
                 <button id="mobileMenuBtn" class="md:hidden text-gray-400 hover:text-white p-2"><i class="fa-solid fa-bars text-xl"></i></button>
@@ -109,6 +110,7 @@
                 <a href="#advantages" class="text-gray-300 hover:text-white font-medium transition mobile-link">Преимущества</a>
                 <a href="#pricing" class="text-gray-300 hover:text-white font-medium transition mobile-link">Тарифы</a>
                 <a href="https://demo.myolab.ru" class="text-myo-300 hover:text-white font-semibold transition"><i class="fa-solid fa-play text-xs mr-2"></i>Демо-версия</a>
+                <a href="https://app.myolab.ru/vhod" class="text-gray-300 hover:text-white font-medium transition"><i class="fa-solid fa-right-to-bracket text-xs mr-2"></i>Войти</a>
                 <a href="#contact" class="bg-myo-600 text-white text-center px-5 py-3 rounded-lg font-semibold mt-2 mobile-link">Связаться</a>
             </div>
         </div>
@@ -560,14 +562,14 @@
             <div class="text-center max-w-2xl mx-auto mb-16">
                 <span class="text-myo-500 font-mono text-xs uppercase tracking-widest">Тарифы</span>
                 <h2 class="text-3xl lg:text-4xl font-extrabold text-white mt-4 mb-5 tracking-tight">Простая и прозрачная подписка</h2>
-                <p class="text-gray-400 leading-relaxed text-[15px]">Ежемесячная подписка без скрытых платежей. Выберите тариф по зонам анализа и отмените подписку в любой момент.</p>
+                <p class="text-gray-400 leading-relaxed text-[15px]">Подписка на месяц или на год без скрытых платежей. Автопродление — по вашему выбору: его можно отключить в любой момент.</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- Лицо: доступен -->
                 <div class="card-hover bg-[#141428] rounded-2xl p-8 flex flex-col relative">
                     <div class="absolute -top-3 right-6 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full">Доступен</div>
                     <div class="mb-6 md:min-h-[7rem]"><h3 class="text-white font-bold text-xl mb-2">Лицо</h3><p class="text-gray-500 text-sm">Анализ мимических мышц лица для одного специалиста.</p></div>
-                    <div class="mb-7"><span class="text-4xl font-extrabold text-white">100 &#8381;</span><span class="text-gray-500 text-sm ml-1">/ мес</span></div>
+                    <div class="mb-7"><span class="text-4xl font-extrabold text-white">100 &#8381;</span><span class="text-gray-500 text-sm ml-1">/ мес</span><p class="text-sm text-gray-400 mt-2">или <span class="text-white font-semibold">1 000 &#8381; / год</span> <span class="ml-1 bg-emerald-600/15 text-emerald-400 text-xs font-bold px-2 py-0.5 rounded-full">выгода 17%</span></p></div>
                     <ul class="space-y-3 mb-8 flex-1">
                         <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Оценка мимических мышц лица в реальном времени</li>
                         <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Калибровка под лицо пациента и оценка асимметрии</li>
@@ -575,7 +577,8 @@
                         <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>История сеансов и сравнение динамики</li>
                         <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Техническая поддержка по email</li>
                     </ul>
-                    <button onclick="handlePayment('face')" class="w-full bg-gradient-to-r from-myo-600 to-myo-700 text-white py-3.5 rounded-xl font-semibold hover:from-myo-500 hover:to-myo-600 transition shadow-xl shadow-myo-600/15">Оформить подписку</button>
+                    <a href="https://app.myolab.ru/oplata" class="w-full block text-center bg-gradient-to-r from-myo-600 to-myo-700 text-white py-3.5 rounded-xl font-semibold hover:from-myo-500 hover:to-myo-600 transition shadow-xl shadow-myo-600/15">Оформить подписку</a>
+                    <p class="text-gray-600 text-xs mt-3 text-center">Уже оплатили? <a href="https://app.myolab.ru/vhod" class="text-myo-400 hover:underline">Войти</a></p>
                 </div>
                 <!-- Лицо, шея и верхние конечности: скоро -->
                 <div class="bg-gradient-to-br from-[#141428] to-[#1a1535] rounded-2xl p-8 border border-myo-800/25 flex flex-col relative">
@@ -606,7 +609,7 @@
                     <a href="mailto:zastrizhkova@mail.ru?subject=Тариф Клиника" class="w-full block text-center border border-myo-600/40 text-myo-400 py-3.5 rounded-xl font-semibold hover:bg-myo-600/10 transition">Связаться с нами</a>
                 </div>
             </div>
-            <p class="text-center text-gray-600 text-xs mt-8">Оплата через защищённый платёжный сервис ЮKassa. Подписку можно отменить в любой момент. <a href="https://demo.myolab.ru" class="text-myo-400 hover:underline">Попробовать демо-версию</a></p>
+            <p class="text-center text-gray-600 text-xs mt-8">Оплата через защищённый платёжный сервис ЮKassa. Автопродление можно отключить в личном кабинете. <a href="https://demo.myolab.ru" class="text-myo-400 hover:underline">Попробовать демо-версию</a></p>
         </div>
     </section>
 
@@ -618,9 +621,9 @@
                 <h2 class="text-2xl lg:text-3xl font-extrabold text-white mt-4 tracking-tight">Как получить доступ после оплаты</h2>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="card-hover bg-[#141428] rounded-xl p-6 text-center"><div class="w-12 h-12 bg-myo-600/12 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-myo-400 font-mono font-bold text-lg">1</span></div><h3 class="text-white font-bold mb-2">Оплатите подписку</h3><p class="text-gray-500 text-sm">Выберите тариф и оплатите банковской картой через защищённый платёжный сервис.</p></div>
-                <div class="card-hover bg-[#141428] rounded-xl p-6 text-center"><div class="w-12 h-12 bg-myo-600/12 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-myo-400 font-mono font-bold text-lg">2</span></div><h3 class="text-white font-bold mb-2">Получите доступ</h3><p class="text-gray-500 text-sm">В течение 24 часов на вашу почту придёт письмо с логином и ссылкой для входа.</p></div>
-                <div class="card-hover bg-[#141428] rounded-xl p-6 text-center"><div class="w-12 h-12 bg-myo-600/12 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-myo-400 font-mono font-bold text-lg">3</span></div><h3 class="text-white font-bold mb-2">Начните работу</h3><p class="text-gray-500 text-sm">Откройте платформу в браузере, подключите веб-камеру и начните оценку.</p></div>
+                <div class="card-hover bg-[#141428] rounded-xl p-6 text-center"><div class="w-12 h-12 bg-myo-600/12 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-myo-400 font-mono font-bold text-lg">1</span></div><h3 class="text-white font-bold mb-2">Оплатите подписку</h3><p class="text-gray-500 text-sm">Выберите срок — месяц или год — и способ продления: автоматически или разовая оплата.</p></div>
+                <div class="card-hover bg-[#141428] rounded-xl p-6 text-center"><div class="w-12 h-12 bg-myo-600/12 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-myo-400 font-mono font-bold text-lg">2</span></div><h3 class="text-white font-bold mb-2">Получите ссылку</h3><p class="text-gray-500 text-sm">Сразу после оплаты личная ссылка для входа появится на экране и придёт на вашу почту.</p></div>
+                <div class="card-hover bg-[#141428] rounded-xl p-6 text-center"><div class="w-12 h-12 bg-myo-600/12 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-myo-400 font-mono font-bold text-lg">3</span></div><h3 class="text-white font-bold mb-2">Начните работу</h3><p class="text-gray-500 text-sm">Откройте ссылку на компьютере или планшете с веб-камерой. Одновременно работать можно на одном устройстве.</p></div>
             </div>
             <div class="bg-[#141428] rounded-xl p-6 border border-white/5 mt-8">
                 <h3 class="text-white font-bold mb-4">Что входит в подписку:</h3>
@@ -630,7 +633,7 @@
                     <div class="flex items-start gap-2 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>История всех сеансов и сравнение динамики</div>
                     <div class="flex items-start gap-2 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Техническая поддержка по электронной почте</div>
                     <div class="flex items-start gap-2 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Обновления платформы без дополнительной платы</div>
-                    <div class="flex items-start gap-2 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Возможность отмены подписки в любой момент</div>
+                    <div class="flex items-start gap-2 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Отключение автопродления в личном кабинете в любой момент</div>
                 </div>
             </div>
             <p class="text-gray-600 text-xs mt-6 text-center">Для работы необходимы: компьютер или планшет с веб-камерой, интернет-соединение и браузер (Chrome, Firefox, Safari, Edge). Возврат средств возможен в течение 14 дней.</p>
@@ -685,10 +688,6 @@
     </footer>
 
     <script>
-    // Payment (plan: 'face' = тариф «Лицо», 100 ₽/мес)
-    async function handlePayment(plan) {
-        try { var r = await fetch('/api/create-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:plan||'face'})}); var d = await r.json(); if(d.url){window.location.href=d.url;}else{alert('Ошибка. Попробуйте позже или напишите на zastrizhkova@mail.ru');} } catch(e) { alert('Сервис оплаты временно недоступен. Напишите на zastrizhkova@mail.ru'); }
-    }
     // Mobile menu
     var mb=document.getElementById('mobileMenuBtn'),mc=document.getElementById('mobileMenuClose'),mm=document.getElementById('mobileMenu');
     mb.addEventListener('click',function(){mm.classList.add('open');}); mc.addEventListener('click',function(){mm.classList.remove('open');});
