@@ -416,7 +416,15 @@
                 <div class="card-hover bg-[#141428] rounded-2xl p-8 flex flex-col relative">
                     <div class="absolute -top-3 right-6 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full">Доступен</div>
                     <div class="mb-6 md:min-h-[7rem]"><h3 class="text-white font-bold text-xl mb-2">Лицо</h3><p class="text-gray-500 text-sm">Анализ мимических мышц лица для одного специалиста.</p></div>
-                    <div class="mb-7"><div class="flex items-center gap-2 mb-1"><span class="text-xl font-semibold text-gray-500 line-through decoration-2 decoration-rose-500/80">430 &#8381;</span><span class="bg-rose-600/15 text-rose-400 text-xs font-bold px-2 py-0.5 rounded-full">скидка 30%</span></div><span class="text-4xl font-extrabold text-white">300 &#8381;</span><span class="text-gray-500 text-sm ml-1">/ мес</span><p class="text-sm text-gray-400 mt-2">или <span class="text-gray-500 line-through decoration-rose-500/80">4 300 &#8381;</span> <span class="text-white font-semibold">3 000 &#8381; / год</span> <span class="ml-1 bg-emerald-600/15 text-emerald-400 text-xs font-bold px-2 py-0.5 rounded-full">выгода 17%</span></p></div>
+                    <div class="mb-7" id="cena-lico">
+                        <div class="inline-flex p-1 mb-4 rounded-full bg-white/5 border border-white/10" role="group" aria-label="Период подписки">
+                            <button type="button" data-period="mes" aria-pressed="true" class="period-btn px-4 py-1.5 rounded-full text-sm font-semibold transition bg-myo-600 text-white">Месяц</button>
+                            <button type="button" data-period="god" aria-pressed="false" class="period-btn px-4 py-1.5 rounded-full text-sm font-semibold transition text-gray-400 hover:text-white">Год</button>
+                        </div>
+                        <div class="flex items-center gap-2 mb-1"><span class="text-xl font-semibold text-gray-500 line-through decoration-2 decoration-rose-500/80" data-cena-staraya>430 &#8381;</span>
+                        <span class="bg-rose-600/15 text-rose-400 text-xs font-bold px-2 py-0.5 rounded-full" data-skidka>скидка 30%</span></div>
+                        <span class="text-4xl font-extrabold text-white" data-cena-novaya>300 &#8381;</span><span class="text-gray-500 text-sm ml-1" data-cena-period>/ мес</span>
+                    </div>
                     <ul class="space-y-3 mb-8 flex-1">
                         <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Оценка мимических мышц лица в реальном времени</li>
                         <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Калибровка под лицо пациента и оценка асимметрии</li>
@@ -424,7 +432,7 @@
                         <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>История сеансов и сравнение динамики</li>
                         <li class="flex items-start gap-2.5 text-sm text-gray-400"><i class="fa-solid fa-check text-myo-400 mt-0.5 text-xs"></i>Техническая поддержка по email</li>
                     </ul>
-                    <a href="https://app.myolab.ru/oplata" class="w-full block text-center bg-gradient-to-r from-myo-600 to-myo-700 text-white py-3.5 rounded-xl font-semibold hover:from-myo-500 hover:to-myo-600 transition shadow-xl shadow-myo-600/15">Оформить подписку</a>
+                    <a href="https://app.myolab.ru/oplata" id="knopka-podpiska" class="w-full block text-center bg-gradient-to-r from-myo-600 to-myo-700 text-white py-3.5 rounded-xl font-semibold hover:from-myo-500 hover:to-myo-600 transition shadow-xl shadow-myo-600/15">Оформить подписку</a>
                     <p class="text-gray-600 text-xs mt-3 text-center">Уже оплатили? <a href="https://app.myolab.ru/vhod" class="text-myo-400 hover:underline">Войти</a></p>
                 </div>
                 <!-- Лицо, шея и верхние конечности: скоро -->
@@ -545,5 +553,33 @@
     // Nav scroll effect
     window.addEventListener('scroll',function(){document.getElementById('mainNav').classList.toggle('scrolled',window.scrollY>20);});
     </script>
+<script>
+(function () {
+    var ceny = {
+        mes: { staraya: '430 \u20bd', novaya: '300 \u20bd', period: '/ мес', skidka: 'скидка 30%', ssylka: 'https://app.myolab.ru/oplata' },
+        god: { staraya: '5 160 \u20bd', novaya: '3 000 \u20bd', period: '/ год', skidka: 'скидка 42%', ssylka: 'https://app.myolab.ru/oplata?tarif=god' }
+    };
+    var blok = document.getElementById('cena-lico');
+    if (!blok) return;
+    var knopka = document.getElementById('knopka-podpiska');
+    function vybrat(period) {
+        var c = ceny[period];
+        blok.querySelector('[data-cena-staraya]').textContent = c.staraya;
+        blok.querySelector('[data-cena-novaya]').textContent = c.novaya;
+        blok.querySelector('[data-cena-period]').textContent = c.period;
+        blok.querySelector('[data-skidka]').textContent = c.skidka;
+        if (knopka) knopka.href = c.ssylka;
+        blok.querySelectorAll('.period-btn').forEach(function (b) {
+            var on = b.dataset.period === period;
+            b.setAttribute('aria-pressed', on ? 'true' : 'false');
+            b.classList.toggle('bg-myo-600', on); b.classList.toggle('text-white', on);
+            b.classList.toggle('text-gray-400', !on);
+        });
+    }
+    blok.querySelectorAll('.period-btn').forEach(function (b) {
+        b.addEventListener('click', function () { vybrat(b.dataset.period); });
+    });
+})();
+</script>
 </body>
 </html>
